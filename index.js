@@ -1,35 +1,38 @@
 const express = require('express');
-const session = require('express-session');
 const jwt = require('jsonwebtoken');
-
-const customer_routes = require('./final_project/router/auth_users.js').authenticated;
-const genl_routes = require('./final_project/router/general.js').general;
-const booksdb = require('./final_project/router/booksdb.js');
+const session = require('express-session')
+const customer_routes = require('./router/auth_users.js').authenticated;
+const genl_routes = require('./router/general.js').general;
 
 const app = express();
+
 app.use(express.json());
 
-// Serve booksdb.js as JSON endpoint
-app.get('/api/books', (req, res) => {
-  res.json(booksdb);
+app.use("/customer",session({secret:"fingerprint_customer",resave: true, saveUninitialized: true}))
+
+app.use("/customer/auth/*", function auth(req,res,next){
+    
+  // Check if user is logged in and has valid access token
+  if (req.session.authorization) {
+    let token = req.session.authorization['accessToken'];
+
+    // Verify JWT token
+    jwt.verify(token, "access", (err, user) => {
+        if (!err) {
+            req.user = user;
+            next(); // Proceed to the next middleware
+        } else {
+            return res.status(403).json({ message: "User not authenticated" });
+        }
+    });
+} else {
+    return res.status(403).json({ message: "User not logged in" });
+}
 });
+ 
+const PORT =5000;
 
-// Session middleware
-app.use("/customer", session({
-  secret: "fingerprint_customer",
-  resave: true,
-  saveUninitialized: true
-}));
-
-// Authentication middleware for /customer/auth/*
-app.use("/customer/auth/*", (req, res, next) => {
-  if (!req.session.user) return res.status(401).json({ message: "User not authenticated" });
-  next();
-});
-
-// Routes
 app.use("/customer", customer_routes);
 app.use("/", genl_routes);
 
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT,()=>console.log("Server is running"));

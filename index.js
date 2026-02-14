@@ -2,9 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
 
-const customer_routes = require('./auth_users.js').authenticated;
-const genl_routes = require('./general.js').general;
-const booksdb = require('./booksdb.js');
+const customer_routes = require('./final_project/router/auth_users.js').authenticated;
+const genl_routes = require('./final_project/router/general.js').general;
+const booksdb = require('./final_project/router/booksdb.js');
 
 const app = express();
 app.use(express.json());
